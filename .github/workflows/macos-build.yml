@@ -15,6 +15,11 @@ on:
       - "LICENSE"
   workflow_dispatch:
     inputs:
+      doRelease:
+        description: "Publish release and update latest"
+        type: boolean
+        required: false
+        default: false
       variant:
         description: "FFmpeg variant to build"
         type: choice
@@ -37,6 +42,9 @@ on:
         type: string
         required: false
         default: "x264,x265"
+
+permissions:
+  contents: write
 
 concurrency:
   group: macos-build-${{ github.workflow }}-${{ github.ref }}
@@ -245,3 +253,49 @@ jobs:
           overwrite: true
           path: artifacts/macos/*.tar.xz
           if-no-files-found: error
+
+  publish_release:
+    name: Publish release
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.event.inputs.doRelease == 'true' && needs.build-macos.result == 'success' }}
+    needs: build-macos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ffmpeg-macos-*
+          merge-multiple: true
+          path: artifacts
+
+      - name: Create release
+        id: create_release
+        run: |
+          set -xe
+          shopt -s nullglob
+          RELDATE="$(date +'%Y-%m-%d %H:%M')"
+          NAME="macOS Auto-Build $RELDATE"
+          TAGNAME="autobuild-macos-$(date +'%Y-%m-%d-%H-%M')"
+          (cd artifacts && sha256sum *.tar.xz > checksums.sha256)
+          gh release create "$TAGNAME" --target "macos-builds" --title "$NAME" artifacts/*.tar.xz artifacts/checksums.*
+          echo "tag_name=${TAGNAME}" >> "$GITHUB_OUTPUT"
+          echo "rel_date=${RELDATE}" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Update Latest
+        run: |
+          set -xe
+          shopt -s nullglob
+          mkdir latest_artifacts
+          ./util/repack_latest.sh latest_artifacts artifacts/*.tar.xz
+          (cd latest_artifacts && sha256sum *.tar.xz > checksums.sha256)
+          NAME="Latest macOS Auto-Build (${{ steps.create_release.outputs.rel_date }})"
+          TAGNAME="latest-macos"
+          gh release delete --cleanup-tag --yes "$TAGNAME" || true
+          sleep 15
+          gh release create "$TAGNAME" --target "macos-builds" --title "$NAME" latest_artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
