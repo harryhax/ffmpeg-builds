@@ -3,15 +3,13 @@ name: Build macOS FFmpeg
 on:
   push:
     branches:
-      - main
-      - master
+      - macos-builds
     paths-ignore:
       - "**.md"
       - "LICENSE"
   pull_request:
     branches:
-      - main
-      - master
+      - macos-builds
     paths-ignore:
       - "**.md"
       - "LICENSE"
