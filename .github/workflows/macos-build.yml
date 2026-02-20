@@ -26,7 +26,7 @@ on:
         required: false
         default: ""
       enabled_deps:
-        description: "Comma-separated deps to enable (example: all or x264,x265,libsamplerate,libkvazaar,sdl2,libgme,libaribcaption,librubberband,libvvenc,whisper,libxvid,libaom,libmp3lame,chromaprint,libopencore-amr,openal,libsvtav1,gmp,fribidi,frei0r,libvidstab,libvmaf)"
+        description: "Comma-separated deps to enable (example: all or x264,x265,libsamplerate,libkvazaar,sdl2,libgme,libaribcaption,librubberband,libvvenc,whisper,libxvid,libdavs2,libfdk-aac,ffnvcodec,liblcevcdec,amf,libvpl,schannel,libuavs3d,libxavs2,libzvbi,libaom,libmp3lame,chromaprint,libopencore-amr,openal,libsvtav1,gmp,fribidi,frei0r,libvidstab,libvmaf)"
         type: string
         required: false
         default: "all"
@@ -62,6 +62,7 @@ jobs:
             libass libbluray openjpeg srt libsoxr zimg libssh zeromq snappy libopenmpt libsamplerate
           brew install kvazaar sdl2
           brew install game-music-emu libaribcaption rubberband vvenc whisper-cpp xvid
+          brew install fdk-aac
           brew install dav1d theora two-lame openh264 rav1e
           brew install lame chromaprint opencore-amr openal-soft svt-av1
           brew install gmp fribidi frei0r vid.stab libvmaf
@@ -115,6 +116,16 @@ jobs:
           LIBVVENC=$(dep_enabled libvvenc vvenc && echo true || echo false)
           WHISPER=$(dep_enabled whisper && echo true || echo false)
           LIBXVID=$(dep_enabled libxvid xvid && echo true || echo false)
+          LIBDAVS2=$(dep_enabled libdavs2 davs2 && echo true || echo false)
+          LIBFDK_AAC=$(dep_enabled libfdk-aac fdk-aac && echo true || echo false)
+          FFNVCODEC=$(dep_enabled ffnvcodec && echo true || echo false)
+          LIBLCEVCDEC=$(dep_enabled liblcevcdec lcevcdec && echo true || echo false)
+          AMF=$(dep_enabled amf && echo true || echo false)
+          LIBVPL=$(dep_enabled libvpl onevpl vpl && echo true || echo false)
+          SCHANNEL=$(dep_enabled schannel && echo true || echo false)
+          LIBUAVS3D=$(dep_enabled libuavs3d uavs3d && echo true || echo false)
+          LIBXAVS2=$(dep_enabled libxavs2 xavs2 && echo true || echo false)
+          LIBZVBI=$(dep_enabled libzvbi zvbi && echo true || echo false)
           LIBDAV1D=$(dep_enabled libdav1d dav1d && echo true || echo false)
           LIBTHEORA=$(dep_enabled libtheora theora && echo true || echo false)
           LIBTWOLAME=$(dep_enabled libtwolame twolame two-lame && echo true || echo false)
@@ -160,6 +171,16 @@ jobs:
           echo "libvvenc=$LIBVVENC" >> "$GITHUB_OUTPUT"
           echo "whisper=$WHISPER" >> "$GITHUB_OUTPUT"
           echo "libxvid=$LIBXVID" >> "$GITHUB_OUTPUT"
+          echo "libdavs2=$LIBDAVS2" >> "$GITHUB_OUTPUT"
+          echo "libfdk_aac=$LIBFDK_AAC" >> "$GITHUB_OUTPUT"
+          echo "ffnvcodec=$FFNVCODEC" >> "$GITHUB_OUTPUT"
+          echo "liblcevcdec=$LIBLCEVCDEC" >> "$GITHUB_OUTPUT"
+          echo "amf=$AMF" >> "$GITHUB_OUTPUT"
+          echo "libvpl=$LIBVPL" >> "$GITHUB_OUTPUT"
+          echo "schannel=$SCHANNEL" >> "$GITHUB_OUTPUT"
+          echo "libuavs3d=$LIBUAVS3D" >> "$GITHUB_OUTPUT"
+          echo "libxavs2=$LIBXAVS2" >> "$GITHUB_OUTPUT"
+          echo "libzvbi=$LIBZVBI" >> "$GITHUB_OUTPUT"
           echo "libdav1d=$LIBDAV1D" >> "$GITHUB_OUTPUT"
           echo "libtheora=$LIBTHEORA" >> "$GITHUB_OUTPUT"
           echo "libtwolame=$LIBTWOLAME" >> "$GITHUB_OUTPUT"
@@ -201,7 +222,7 @@ jobs:
 
           BREW_PREFIX="$(brew --prefix)"
           export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
-          for formula in libsoxr snappy libopenmpt chromaprint opencore-amr openal-soft svt-av1 gmp fribidi frei0r vid.stab libvmaf game-music-emu libaribcaption rubberband vvenc whisper-cpp xvid; do
+          for formula in libsoxr snappy libopenmpt chromaprint opencore-amr openal-soft svt-av1 gmp fribidi frei0r vid.stab libvmaf game-music-emu libaribcaption rubberband vvenc whisper-cpp xvid fdk-aac; do
             FORMULA_PREFIX="$(brew --prefix "$formula" 2>/dev/null || true)"
             if [[ -n "$FORMULA_PREFIX" && -d "$FORMULA_PREFIX/lib/pkgconfig" ]]; then
               export PKG_CONFIG_PATH="$FORMULA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -240,6 +261,16 @@ jobs:
           FF_ENABLE_LIBVVENC=$([[ "${{ steps.params.outputs.libvvenc }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_WHISPER=$([[ "${{ steps.params.outputs.whisper }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBXVID=$([[ "${{ steps.params.outputs.libxvid }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBDAVS2=$([[ "${{ steps.params.outputs.libdavs2 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBFDK_AAC=$([[ "${{ steps.params.outputs.libfdk_aac }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_FFNVCODEC=$([[ "${{ steps.params.outputs.ffnvcodec }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBLCEVCDEC=$([[ "${{ steps.params.outputs.liblcevcdec }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_AMF=$([[ "${{ steps.params.outputs.amf }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBVPL=$([[ "${{ steps.params.outputs.libvpl }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_SCHANNEL=$([[ "${{ steps.params.outputs.schannel }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBUAVS3D=$([[ "${{ steps.params.outputs.libuavs3d }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBXAVS2=$([[ "${{ steps.params.outputs.libxavs2 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBZVBI=$([[ "${{ steps.params.outputs.libzvbi }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBDAV1D=$([[ "${{ steps.params.outputs.libdav1d }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBTHEORA=$([[ "${{ steps.params.outputs.libtheora }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBTWOLAME=$([[ "${{ steps.params.outputs.libtwolame }}" == "true" ]] && echo 1 || echo 0) \

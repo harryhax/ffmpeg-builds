@@ -165,6 +165,19 @@ load_macos_dependency_matrix() {
     declare -F ffmacos_dependency_matrix >/dev/null 2>&1
 }
 
+macos_dep_fail_or_skip() {
+    local stage="$1"
+    local reason="$2"
+
+    if [[ "${has_explicit_dep_toggles:-0}" -eq 0 ]]; then
+        echo "Skipping ${stage}: ${reason}"
+        return 0
+    fi
+
+    echo "${reason}"
+    exit 1
+}
+
 enable_scriptsd_dependency() {
     local stage="$1"
     local pkg_module="$2"
@@ -182,8 +195,8 @@ enable_scriptsd_dependency() {
             ffbuild_enabled
         fi
     ); then
-        echo "$stage is disabled for variant '${VARIANT}' according to ${dep_script}"
-        exit 1
+        macos_dep_fail_or_skip "$stage" "$stage is disabled for variant '${VARIANT}' according to ${dep_script}"
+        return 0
     fi
 
     local soxr_prefix=""
@@ -214,7 +227,7 @@ enable_scriptsd_dependency() {
         xvid_prefix="$(brew --prefix xvid 2>/dev/null || true)"
     fi
 
-    if [[ -n "$pkg_module" ]] && ! pkg-config --exists "$pkg_module"; then
+    if [[ -n "$pkg_module" ]] && ! pkg-config --static --exists "$pkg_module"; then
         if [[ "$fallback_mode" == "snappy" ]]; then
             local snappy_prefix
             snappy_prefix="$(brew --prefix snappy 2>/dev/null || true)"
@@ -234,7 +247,7 @@ enable_scriptsd_dependency() {
             if [[ -d "$soxr_pc_dir" ]]; then
                 export PKG_CONFIG_PATH="${soxr_pc_dir}:${PKG_CONFIG_PATH:-}"
             fi
-            if ! pkg-config --exists "$pkg_module"; then
+            if ! pkg-config --static --exists "$pkg_module"; then
                 echo "$stage not found via pkg-config module '$pkg_module' after soxr fallback"
                 exit 1
             fi
@@ -273,9 +286,8 @@ enable_scriptsd_dependency() {
             FF_CFLAGS="${FF_CFLAGS} -I${xvid_prefix}/include"
             FF_LIBS="${FF_LIBS} -L${xvid_prefix}/lib -lxvidcore"
         else
-            echo "$stage not found via pkg-config module '$pkg_module'"
-            echo "Install it with Homebrew and ensure pkg-config can resolve it."
-            exit 1
+            macos_dep_fail_or_skip "$stage" "$stage not found via pkg-config module '$pkg_module'. Install it with Homebrew and ensure pkg-config can resolve it."
+            return 0
         fi
     fi
 

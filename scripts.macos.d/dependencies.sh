@@ -28,6 +28,16 @@ FF_ENABLE_LIBRUBBERBAND|rubberband|rubberband|
 FF_ENABLE_LIBVVENC|vvenc|libvvenc|
 FF_ENABLE_WHISPER|whisper|whisper|
 FF_ENABLE_LIBXVID|xvid|xvid|xvid
+FF_ENABLE_LIBDAVS2|davs2|davs2|
+FF_ENABLE_LIBFDK_AAC|fdk-aac|fdk-aac|
+FF_ENABLE_FFNVCODEC|ffnvcodec|ffnvcodec|
+FF_ENABLE_LIBLCEVCDEC|lcevcdec|liblcevc_dec|
+FF_ENABLE_AMF|amf|amf|
+FF_ENABLE_LIBVPL|onevpl|libvpl|
+FF_ENABLE_SCHANNEL|schannel||
+FF_ENABLE_LIBUAVS3D|uavs3d|uavs3d|
+FF_ENABLE_LIBXAVS2|xavs2|xavs2|
+FF_ENABLE_LIBZVBI|zvbi|zvbi-0.2|
 FF_ENABLE_LIBDAV1D|dav1d|dav1d|
 FF_ENABLE_LIBTHEORA|libtheora|theoraenc|theora
 FF_ENABLE_LIBTWOLAME|twolame|twolame|twolame
