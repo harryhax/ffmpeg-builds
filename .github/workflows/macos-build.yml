@@ -1,0 +1,249 @@
+name: Build macOS FFmpeg
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+  pull_request:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "FFmpeg variant to build"
+        type: choice
+        required: true
+        default: gpl
+        options:
+          - gpl
+          - lgpl
+          - nonfree
+          - gpl-shared
+          - lgpl-shared
+          - nonfree-shared
+      addins:
+        description: "Space-separated addins (example: 7.1 debug)"
+        type: string
+        required: false
+        default: ""
+      enabled_deps:
+        description: "Comma-separated deps to enable (example: x264,x265,libaom,libmp3lame,chromaprint,libopencore-amr,openal,libsvtav1,gmp,fribidi,frei0r,libvidstab,libvmaf)"
+        type: string
+        required: false
+        default: "x264,x265"
+
+concurrency:
+  group: macos-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-14
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Homebrew downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: macos-homebrew-${{ runner.os }}-${{ hashFiles('.github/workflows/macos-build.yml') }}
+          restore-keys: |
+            macos-homebrew-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          brew install pkg-config nasm ccache x264 x265 aom libvpx opus webp libvorbis \
+            libass libbluray openjpeg srt libsoxr zimg libssh zeromq snappy libopenmpt
+          brew install dav1d theora two-lame openh264 rav1e
+          brew install lame chromaprint opencore-amr openal-soft svt-av1
+          brew install gmp fribidi frei0r vid.stab libvmaf
+
+      - name: Resolve build parameters
+        id: params
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VARIANT="${{ github.event.inputs.variant }}"
+          [[ -n "$VARIANT" ]] || VARIANT="gpl"
+
+          ADDINS="${{ github.event.inputs.addins }}"
+          ENABLED_DEPS_RAW="${{ github.event.inputs.enabled_deps }}"
+          [[ -n "$ENABLED_DEPS_RAW" ]] || ENABLED_DEPS_RAW="x264,x265"
+          ENABLED_DEPS="$(echo "$ENABLED_DEPS_RAW" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+
+          dep_enabled() {
+            local dep
+            for dep in "$@"; do
+              [[ ",${ENABLED_DEPS}," == *",${dep},"* ]] && return 0
+            done
+            return 1
+          }
+
+          X264=$(dep_enabled x264 && echo true || echo false)
+          X265=$(dep_enabled x265 && echo true || echo false)
+          LIBAOM=$(dep_enabled libaom aom && echo true || echo false)
+          LIBVPX=$(dep_enabled libvpx vpx && echo true || echo false)
+          LIBOPUS=$(dep_enabled libopus opus && echo true || echo false)
+          LIBWEBP=$(dep_enabled libwebp webp && echo true || echo false)
+          LIBVORBIS=$(dep_enabled libvorbis vorbis && echo true || echo false)
+          LIBASS=$(dep_enabled libass ass && echo true || echo false)
+          LIBBLURAY=$(dep_enabled libbluray bluray && echo true || echo false)
+          LIBOPENJPEG=$(dep_enabled libopenjpeg openjpeg && echo true || echo false)
+          LIBSRT=$(dep_enabled libsrt srt && echo true || echo false)
+          LIBSOXR=$(dep_enabled libsoxr soxr && echo true || echo false)
+          LIBZIMG=$(dep_enabled libzimg zimg && echo true || echo false)
+          LIBSSH=$(dep_enabled libssh ssh && echo true || echo false)
+          LIBZMQ=$(dep_enabled libzmq zmq && echo true || echo false)
+          LIBSNAPPY=$(dep_enabled libsnappy snappy && echo true || echo false)
+          LIBOPENMPT=$(dep_enabled libopenmpt openmpt && echo true || echo false)
+          LIBDAV1D=$(dep_enabled libdav1d dav1d && echo true || echo false)
+          LIBTHEORA=$(dep_enabled libtheora theora && echo true || echo false)
+          LIBTWOLAME=$(dep_enabled libtwolame twolame two-lame && echo true || echo false)
+          LIBOPENH264=$(dep_enabled libopenh264 openh264 && echo true || echo false)
+          LIBRAV1E=$(dep_enabled librav1e rav1e && echo true || echo false)
+          LIBMP3LAME=$(dep_enabled libmp3lame mp3lame lame && echo true || echo false)
+          CHROMAPRINT=$(dep_enabled chromaprint && echo true || echo false)
+          LIBOPENCORE_AMR=$(dep_enabled libopencore-amr libopencore_amr opencore-amr && echo true || echo false)
+          OPENAL=$(dep_enabled openal && echo true || echo false)
+          LIBSVTAV1=$(dep_enabled libsvtav1 svtav1 svt-av1 && echo true || echo false)
+          LIBGMP=$(dep_enabled gmp && echo true || echo false)
+          LIBFRIBIDI=$(dep_enabled libfribidi fribidi && echo true || echo false)
+          FREI0R=$(dep_enabled frei0r && echo true || echo false)
+          LIBVIDSTAB=$(dep_enabled libvidstab vidstab vid.stab && echo true || echo false)
+          LIBVMAF=$(dep_enabled libvmaf vmaf && echo true || echo false)
+
+          echo "variant=$VARIANT" >> "$GITHUB_OUTPUT"
+          echo "addins=$ADDINS" >> "$GITHUB_OUTPUT"
+          echo "enabled_deps=$ENABLED_DEPS" >> "$GITHUB_OUTPUT"
+          echo "x264=$X264" >> "$GITHUB_OUTPUT"
+          echo "x265=$X265" >> "$GITHUB_OUTPUT"
+          echo "libaom=$LIBAOM" >> "$GITHUB_OUTPUT"
+          echo "libvpx=$LIBVPX" >> "$GITHUB_OUTPUT"
+          echo "libopus=$LIBOPUS" >> "$GITHUB_OUTPUT"
+          echo "libwebp=$LIBWEBP" >> "$GITHUB_OUTPUT"
+          echo "libvorbis=$LIBVORBIS" >> "$GITHUB_OUTPUT"
+          echo "libass=$LIBASS" >> "$GITHUB_OUTPUT"
+          echo "libbluray=$LIBBLURAY" >> "$GITHUB_OUTPUT"
+          echo "libopenjpeg=$LIBOPENJPEG" >> "$GITHUB_OUTPUT"
+          echo "libsrt=$LIBSRT" >> "$GITHUB_OUTPUT"
+          echo "libsoxr=$LIBSOXR" >> "$GITHUB_OUTPUT"
+          echo "libzimg=$LIBZIMG" >> "$GITHUB_OUTPUT"
+          echo "libssh=$LIBSSH" >> "$GITHUB_OUTPUT"
+          echo "libzmq=$LIBZMQ" >> "$GITHUB_OUTPUT"
+          echo "libsnappy=$LIBSNAPPY" >> "$GITHUB_OUTPUT"
+          echo "libopenmpt=$LIBOPENMPT" >> "$GITHUB_OUTPUT"
+          echo "libdav1d=$LIBDAV1D" >> "$GITHUB_OUTPUT"
+          echo "libtheora=$LIBTHEORA" >> "$GITHUB_OUTPUT"
+          echo "libtwolame=$LIBTWOLAME" >> "$GITHUB_OUTPUT"
+          echo "libopenh264=$LIBOPENH264" >> "$GITHUB_OUTPUT"
+          echo "librav1e=$LIBRAV1E" >> "$GITHUB_OUTPUT"
+          echo "libmp3lame=$LIBMP3LAME" >> "$GITHUB_OUTPUT"
+          echo "chromaprint=$CHROMAPRINT" >> "$GITHUB_OUTPUT"
+          echo "libopencore_amr=$LIBOPENCORE_AMR" >> "$GITHUB_OUTPUT"
+          echo "openal=$OPENAL" >> "$GITHUB_OUTPUT"
+          echo "libsvtav1=$LIBSVTAV1" >> "$GITHUB_OUTPUT"
+          echo "gmp=$LIBGMP" >> "$GITHUB_OUTPUT"
+          echo "libfribidi=$LIBFRIBIDI" >> "$GITHUB_OUTPUT"
+          echo "frei0r=$FREI0R" >> "$GITHUB_OUTPUT"
+          echo "libvidstab=$LIBVIDSTAB" >> "$GITHUB_OUTPUT"
+          echo "libvmaf=$LIBVMAF" >> "$GITHUB_OUTPUT"
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: macos-ccache-${{ runner.os }}-${{ steps.params.outputs.variant }}-${{ hashFiles('build-macos.sh', '.github/workflows/macos-build.yml') }}
+          restore-keys: |
+            macos-ccache-${{ runner.os }}-${{ steps.params.outputs.variant }}-
+            macos-ccache-${{ runner.os }}-
+
+      - name: Build FFmpeg (macOS)
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./build-macos.sh
+
+          export PATH="$(brew --prefix ccache)/libexec:$PATH"
+          export CCACHE_DIR="$HOME/.ccache"
+          export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
+          export CCACHE_COMPRESS=true
+          export CCACHE_MAXSIZE=2G
+          export CC="ccache clang"
+          export CXX="ccache clang++"
+
+          BREW_PREFIX="$(brew --prefix)"
+          export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+          for formula in libsoxr snappy libopenmpt chromaprint opencore-amr openal-soft svt-av1 gmp fribidi frei0r vid.stab libvmaf; do
+            FORMULA_PREFIX="$(brew --prefix "$formula" 2>/dev/null || true)"
+            if [[ -n "$FORMULA_PREFIX" && -d "$FORMULA_PREFIX/lib/pkgconfig" ]]; then
+              export PKG_CONFIG_PATH="$FORMULA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+            fi
+          done
+
+          BUILD_CMD=(./build-macos.sh "${{ steps.params.outputs.variant }}")
+          if [[ -n "${{ steps.params.outputs.addins }}" ]]; then
+            read -r -a PARSED_ADDINS <<< "${{ steps.params.outputs.addins }}"
+            BUILD_CMD+=("${PARSED_ADDINS[@]}")
+          fi
+
+          FF_ENABLE_X264=$([[ "${{ steps.params.outputs.x264 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_X265=$([[ "${{ steps.params.outputs.x265 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBAOM=$([[ "${{ steps.params.outputs.libaom }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBVPX=$([[ "${{ steps.params.outputs.libvpx }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBOPUS=$([[ "${{ steps.params.outputs.libopus }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBWEBP=$([[ "${{ steps.params.outputs.libwebp }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBVORBIS=$([[ "${{ steps.params.outputs.libvorbis }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBASS=$([[ "${{ steps.params.outputs.libass }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBBLURAY=$([[ "${{ steps.params.outputs.libbluray }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBOPENJPEG=$([[ "${{ steps.params.outputs.libopenjpeg }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBSRT=$([[ "${{ steps.params.outputs.libsrt }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBSOXR=$([[ "${{ steps.params.outputs.libsoxr }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBZIMG=$([[ "${{ steps.params.outputs.libzimg }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBSSH=$([[ "${{ steps.params.outputs.libssh }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBZMQ=$([[ "${{ steps.params.outputs.libzmq }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBSNAPPY=$([[ "${{ steps.params.outputs.libsnappy }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBOPENMPT=$([[ "${{ steps.params.outputs.libopenmpt }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBDAV1D=$([[ "${{ steps.params.outputs.libdav1d }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBTHEORA=$([[ "${{ steps.params.outputs.libtheora }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBTWOLAME=$([[ "${{ steps.params.outputs.libtwolame }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBOPENH264=$([[ "${{ steps.params.outputs.libopenh264 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBRAV1E=$([[ "${{ steps.params.outputs.librav1e }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBMP3LAME=$([[ "${{ steps.params.outputs.libmp3lame }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_CHROMAPRINT=$([[ "${{ steps.params.outputs.chromaprint }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBOPENCORE_AMR=$([[ "${{ steps.params.outputs.libopencore_amr }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_OPENAL=$([[ "${{ steps.params.outputs.openal }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBSVTAV1=$([[ "${{ steps.params.outputs.libsvtav1 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_GMP=$([[ "${{ steps.params.outputs.gmp }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBFRIBIDI=$([[ "${{ steps.params.outputs.libfribidi }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_FREI0R=$([[ "${{ steps.params.outputs.frei0r }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBVIDSTAB=$([[ "${{ steps.params.outputs.libvidstab }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBVMAF=$([[ "${{ steps.params.outputs.libvmaf }}" == "true" ]] && echo 1 || echo 0) \
+          "${BUILD_CMD[@]}"
+
+      - name: ccache stats
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          ccache -s || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-macos-${{ steps.params.outputs.variant }}
+          overwrite: true
+          path: artifacts/macos/*.tar.xz
+          if-no-files-found: error
