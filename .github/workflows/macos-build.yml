@@ -1,18 +1,6 @@
 name: Build macOS FFmpeg
 
 on:
-  push:
-    branches:
-      - macos-builds
-    paths-ignore:
-      - "**.md"
-      - "LICENSE"
-  pull_request:
-    branches:
-      - macos-builds
-    paths-ignore:
-      - "**.md"
-      - "LICENSE"
   workflow_dispatch:
     inputs:
       doRelease:

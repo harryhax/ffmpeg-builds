@@ -71,13 +71,38 @@ All of those can be optionally combined with any combination of addins:
 
 This fork adds native macOS FFmpeg builds (no Docker) for testing and iteration on macOS support.
 
-- CI workflow: **Build macOS FFmpeg**
-- Branch scope: runs on **macos-builds**
-- Build style: uses the existing project structure and `scripts.d` patterns where possible, with macOS-specific mapping in `scripts.macos.d`
-- Release behavior: manual release publishing is available via `workflow_dispatch` using `doRelease=true`
-- Concurrency: configured to keep one active macOS workflow run per ref
+- Build style: native macOS build (no Docker), reusing `scripts.d` patterns where possible with macOS-specific mapping in `scripts.macos.d`
+- Default dependency behavior: if no `FF_ENABLE_*` flags are set, all mapped macOS dependencies are enabled by default
+- Explicit dependency behavior: if any `FF_ENABLE_*` flag is provided, only flags explicitly set to `1` are enabled
+- CI workflow: **Build macOS FFmpeg** (manual trigger only via `workflow_dispatch`)
 
-### Trigger a manual macOS build
+### Build locally (recommended)
+
+Build with default dependency set (all mapped macOS dependencies):
+
+```bash
+./build-macos.sh gpl
+```
+
+Build a different variant or use addins:
+
+```bash
+./build-macos.sh lgpl-shared 7.1 debug
+```
+
+Build with explicit dependency flags (example subset):
+
+```bash
+FF_ENABLE_X264=1 FF_ENABLE_X265=1 FF_ENABLE_LIBASS=1 FF_ENABLE_LIBVMAF=1 ./build-macos.sh gpl
+```
+
+Disable a dependency explicitly:
+
+```bash
+FF_ENABLE_X264=1 FF_ENABLE_LIBAOM=0 ./build-macos.sh gpl
+```
+
+### Trigger a manual CI macOS build
 
 ```bash
 gh workflow run "Build macOS FFmpeg" --repo harryhax/FFmpeg-Builds --ref macos-builds -f variant=gpl -f addins='' -f enabled_deps='all'
