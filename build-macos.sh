@@ -358,11 +358,25 @@ if ! load_macos_dependency_matrix; then
     exit 1
 fi
 
+has_explicit_dep_toggles=0
+while IFS='|' read -r env_var _ _ _; do
+    [[ -z "$env_var" ]] && continue
+    [[ "$env_var" =~ ^# ]] && continue
+    if [[ -n "${!env_var+x}" ]]; then
+        has_explicit_dep_toggles=1
+        break
+    fi
+done < <(ffmacos_dependency_matrix)
+
+if [[ "$has_explicit_dep_toggles" -eq 0 ]]; then
+    echo "No FF_ENABLE_* dependency toggles provided; defaulting to enabling all mapped macOS dependencies."
+fi
+
 while IFS='|' read -r env_var stage pkg_module fallback_mode; do
     [[ -z "$env_var" ]] && continue
     [[ "$env_var" =~ ^# ]] && continue
 
-    if [[ "${!env_var:-0}" == "1" ]]; then
+    if [[ "$has_explicit_dep_toggles" -eq 0 || "${!env_var:-0}" == "1" ]]; then
         enable_scriptsd_dependency "$stage" "$pkg_module" "$fallback_mode"
     fi
 done < <(ffmacos_dependency_matrix)

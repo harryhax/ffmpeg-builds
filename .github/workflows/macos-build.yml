@@ -41,7 +41,7 @@ on:
         description: "Comma-separated deps to enable (example: x264,x265,libaom,libmp3lame,chromaprint,libopencore-amr,openal,libsvtav1,gmp,fribidi,frei0r,libvidstab,libvmaf)"
         type: string
         required: false
-        default: "x264,x265"
+        default: "all"
 
 permissions:
   contents: write
@@ -87,11 +87,12 @@ jobs:
 
           ADDINS="${{ github.event.inputs.addins }}"
           ENABLED_DEPS_RAW="${{ github.event.inputs.enabled_deps }}"
-          [[ -n "$ENABLED_DEPS_RAW" ]] || ENABLED_DEPS_RAW="x264,x265"
+          [[ -n "$ENABLED_DEPS_RAW" ]] || ENABLED_DEPS_RAW="all"
           ENABLED_DEPS="$(echo "$ENABLED_DEPS_RAW" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
 
           dep_enabled() {
             local dep
+            [[ ",${ENABLED_DEPS}," == *",all,"* ]] && return 0
             for dep in "$@"; do
               [[ ",${ENABLED_DEPS}," == *",${dep},"* ]] && return 0
             done
