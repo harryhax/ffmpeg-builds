@@ -169,6 +169,11 @@ macos_dep_fail_or_skip() {
     local stage="$1"
     local reason="$2"
 
+    if [[ "${FF_ALLOW_MISSING_DEPS:-0}" == "1" ]]; then
+        echo "Skipping ${stage}: ${reason}"
+        return 0
+    fi
+
     if [[ "${has_explicit_dep_toggles:-0}" -eq 0 ]]; then
         echo "Skipping ${stage}: ${reason}"
         return 0

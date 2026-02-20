@@ -235,6 +235,10 @@ jobs:
             BUILD_CMD+=("${PARSED_ADDINS[@]}")
           fi
 
+          if [[ "${{ steps.params.outputs.enabled_deps }}" == "all" ]]; then
+            export FF_ALLOW_MISSING_DEPS=1
+          fi
+
           FF_ENABLE_X264=$([[ "${{ steps.params.outputs.x264 }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_X265=$([[ "${{ steps.params.outputs.x265 }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBAOM=$([[ "${{ steps.params.outputs.libaom }}" == "true" ]] && echo 1 || echo 0) \
