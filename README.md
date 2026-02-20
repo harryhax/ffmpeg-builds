@@ -102,6 +102,12 @@ Disable a dependency explicitly:
 FF_ENABLE_X264=1 FF_ENABLE_LIBAOM=0 ./build-macos.sh gpl
 ```
 
+Run the macOS smoke suite after a successful build:
+
+```bash
+./smoke-test-macos.sh
+```
+
 ### Trigger a manual CI macOS build
 
 ```bash
@@ -118,7 +124,7 @@ gh workflow run "Build macOS FFmpeg" --repo harryhax/FFmpeg-Builds --ref macos-b
 
 #### Integrated in this fork
 
-`x264`, `x265`, `libaom`, `libvpx`, `libopus`, `libwebp`, `libvorbis`, `libass`, `libbluray`, `libopenjpeg`, `libsrt`, `libsoxr`, `zimg`, `libssh`, `libzmq`, `snappy`, `libopenmpt`, `dav1d`, `libtheora`, `twolame`, `openh264`, `rav1e`, `libmp3lame`, `chromaprint`, `opencore-amr`, `openal`, `svt-av1`, `gmp`, `fribidi`, `frei0r`, `vidstab`, `libvmaf`.
+`x264`, `x265`, `libaom`, `libvpx`, `libopus`, `libwebp`, `libvorbis`, `libass`, `libbluray`, `libopenjpeg`, `libsrt`, `libsoxr`, `zimg`, `libssh`, `libzmq`, `snappy`, `libopenmpt`, `libsamplerate`, `libkvazaar`, `sdl2`, `libgme`, `libaribcaption`, `librubberband`, `libvvenc`, `whisper`, `libxvid`, `dav1d`, `libtheora`, `twolame`, `openh264`, `rav1e`, `libmp3lame`, `chromaprint`, `opencore-amr`, `openal`, `svt-av1`, `gmp`, `fribidi`, `frei0r`, `vidstab`, `libvmaf`.
 
 #### Remaining from upstream feature set
 
@@ -138,26 +144,17 @@ gh workflow run "Build macOS FFmpeg" --repo harryhax/FFmpeg-Builds --ref macos-b
 
 ##### Feasible but not integrated yet
 
-- `45-libsamplerate.sh`
-- `45-libvorbis.sh`
 - `50-davs2.sh`
 - `50-fdk-aac.sh` (nonfree licensing implications)
-- `50-gme.sh`
-- `50-kvazaar.sh`
-- `50-libaribcaption.sh`
-- `50-rubberband.sh`
-- `50-sdl.sh`
 - `50-uavs3d.sh`
-- `50-vvenc.sh`
-- `50-whisper.sh`
 - `50-xavs2.sh`
-- `50-xvid.sh`
 - `50-zvbi.sh`
 
 ### Notes
 
 - This macOS path is fork-specific and not intended to replace upstream Windows/Linux automation.
 - Dependency parity with upstream is in progress; some upstream dependencies are platform-specific and may not be practical on macOS.
+- If `openal` detection fails locally, install `openal-soft` and ensure Homebrew `pkg-config` paths are exported in your shell environment.
 - `.github_bak/` temporarily stores the original upstream GitHub Actions files while macOS-native workflow testing is isolated in `.github/workflows/macos-build.yml`.
 - This avoids accidentally triggering upstream-style win/linux image/build pipelines during fork iteration.
 - `.github_bak/` will be removed after workflow integration is finalized (macOS flow stabilized and any kept upstream workflows intentionally re-enabled in `.github/workflows`).

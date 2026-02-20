@@ -26,7 +26,7 @@ on:
         required: false
         default: ""
       enabled_deps:
-        description: "Comma-separated deps to enable (example: x264,x265,libaom,libmp3lame,chromaprint,libopencore-amr,openal,libsvtav1,gmp,fribidi,frei0r,libvidstab,libvmaf)"
+        description: "Comma-separated deps to enable (example: all or x264,x265,libsamplerate,libkvazaar,sdl2,libgme,libaribcaption,librubberband,libvvenc,whisper,libxvid,libaom,libmp3lame,chromaprint,libopencore-amr,openal,libsvtav1,gmp,fribidi,frei0r,libvidstab,libvmaf)"
         type: string
         required: false
         default: "all"
@@ -59,7 +59,9 @@ jobs:
       - name: Install dependencies
         run: |
           brew install pkg-config nasm ccache x264 x265 aom libvpx opus webp libvorbis \
-            libass libbluray openjpeg srt libsoxr zimg libssh zeromq snappy libopenmpt
+            libass libbluray openjpeg srt libsoxr zimg libssh zeromq snappy libopenmpt libsamplerate
+          brew install kvazaar sdl2
+          brew install game-music-emu libaribcaption rubberband vvenc whisper-cpp xvid
           brew install dav1d theora two-lame openh264 rav1e
           brew install lame chromaprint opencore-amr openal-soft svt-av1
           brew install gmp fribidi frei0r vid.stab libvmaf
@@ -104,6 +106,15 @@ jobs:
           LIBZMQ=$(dep_enabled libzmq zmq && echo true || echo false)
           LIBSNAPPY=$(dep_enabled libsnappy snappy && echo true || echo false)
           LIBOPENMPT=$(dep_enabled libopenmpt openmpt && echo true || echo false)
+          LIBSAMPLERATE=$(dep_enabled libsamplerate samplerate && echo true || echo false)
+          LIBKVAZAAR=$(dep_enabled libkvazaar kvazaar && echo true || echo false)
+          SDL2=$(dep_enabled sdl2 sdl && echo true || echo false)
+          LIBGME=$(dep_enabled libgme gme && echo true || echo false)
+          LIBARIBCAPTION=$(dep_enabled libaribcaption aribcaption && echo true || echo false)
+          LIBRUBBERBAND=$(dep_enabled librubberband rubberband && echo true || echo false)
+          LIBVVENC=$(dep_enabled libvvenc vvenc && echo true || echo false)
+          WHISPER=$(dep_enabled whisper && echo true || echo false)
+          LIBXVID=$(dep_enabled libxvid xvid && echo true || echo false)
           LIBDAV1D=$(dep_enabled libdav1d dav1d && echo true || echo false)
           LIBTHEORA=$(dep_enabled libtheora theora && echo true || echo false)
           LIBTWOLAME=$(dep_enabled libtwolame twolame two-lame && echo true || echo false)
@@ -140,6 +151,15 @@ jobs:
           echo "libzmq=$LIBZMQ" >> "$GITHUB_OUTPUT"
           echo "libsnappy=$LIBSNAPPY" >> "$GITHUB_OUTPUT"
           echo "libopenmpt=$LIBOPENMPT" >> "$GITHUB_OUTPUT"
+          echo "libsamplerate=$LIBSAMPLERATE" >> "$GITHUB_OUTPUT"
+          echo "libkvazaar=$LIBKVAZAAR" >> "$GITHUB_OUTPUT"
+          echo "sdl2=$SDL2" >> "$GITHUB_OUTPUT"
+          echo "libgme=$LIBGME" >> "$GITHUB_OUTPUT"
+          echo "libaribcaption=$LIBARIBCAPTION" >> "$GITHUB_OUTPUT"
+          echo "librubberband=$LIBRUBBERBAND" >> "$GITHUB_OUTPUT"
+          echo "libvvenc=$LIBVVENC" >> "$GITHUB_OUTPUT"
+          echo "whisper=$WHISPER" >> "$GITHUB_OUTPUT"
+          echo "libxvid=$LIBXVID" >> "$GITHUB_OUTPUT"
           echo "libdav1d=$LIBDAV1D" >> "$GITHUB_OUTPUT"
           echo "libtheora=$LIBTHEORA" >> "$GITHUB_OUTPUT"
           echo "libtwolame=$LIBTWOLAME" >> "$GITHUB_OUTPUT"
@@ -181,7 +201,7 @@ jobs:
 
           BREW_PREFIX="$(brew --prefix)"
           export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
-          for formula in libsoxr snappy libopenmpt chromaprint opencore-amr openal-soft svt-av1 gmp fribidi frei0r vid.stab libvmaf; do
+          for formula in libsoxr snappy libopenmpt chromaprint opencore-amr openal-soft svt-av1 gmp fribidi frei0r vid.stab libvmaf game-music-emu libaribcaption rubberband vvenc whisper-cpp xvid; do
             FORMULA_PREFIX="$(brew --prefix "$formula" 2>/dev/null || true)"
             if [[ -n "$FORMULA_PREFIX" && -d "$FORMULA_PREFIX/lib/pkgconfig" ]]; then
               export PKG_CONFIG_PATH="$FORMULA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -211,6 +231,15 @@ jobs:
           FF_ENABLE_LIBZMQ=$([[ "${{ steps.params.outputs.libzmq }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBSNAPPY=$([[ "${{ steps.params.outputs.libsnappy }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBOPENMPT=$([[ "${{ steps.params.outputs.libopenmpt }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBSAMPLERATE=$([[ "${{ steps.params.outputs.libsamplerate }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBKVAZAAR=$([[ "${{ steps.params.outputs.libkvazaar }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_SDL2=$([[ "${{ steps.params.outputs.sdl2 }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBGME=$([[ "${{ steps.params.outputs.libgme }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBARIBCAPTION=$([[ "${{ steps.params.outputs.libaribcaption }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBRUBBERBAND=$([[ "${{ steps.params.outputs.librubberband }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBVVENC=$([[ "${{ steps.params.outputs.libvvenc }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_WHISPER=$([[ "${{ steps.params.outputs.whisper }}" == "true" ]] && echo 1 || echo 0) \
+          FF_ENABLE_LIBXVID=$([[ "${{ steps.params.outputs.libxvid }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBDAV1D=$([[ "${{ steps.params.outputs.libdav1d }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBTHEORA=$([[ "${{ steps.params.outputs.libtheora }}" == "true" ]] && echo 1 || echo 0) \
           FF_ENABLE_LIBTWOLAME=$([[ "${{ steps.params.outputs.libtwolame }}" == "true" ]] && echo 1 || echo 0) \

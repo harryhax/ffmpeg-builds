@@ -194,6 +194,7 @@ enable_scriptsd_dependency() {
     local opencore_amr_prefix=""
     local frei0r_prefix=""
     local gmp_prefix=""
+    local xvid_prefix=""
     if [[ "$fallback_mode" == "soxr" ]]; then
         soxr_prefix="$(brew --prefix libsoxr 2>/dev/null || true)"
     elif [[ "$fallback_mode" == "theora" ]]; then
@@ -209,6 +210,8 @@ enable_scriptsd_dependency() {
         frei0r_prefix="$(brew --prefix frei0r 2>/dev/null || true)"
     elif [[ "$fallback_mode" == "gmp" ]]; then
         gmp_prefix="$(brew --prefix gmp 2>/dev/null || true)"
+    elif [[ "$fallback_mode" == "xvid" ]]; then
+        xvid_prefix="$(brew --prefix xvid 2>/dev/null || true)"
     fi
 
     if [[ -n "$pkg_module" ]] && ! pkg-config --exists "$pkg_module"; then
@@ -262,6 +265,13 @@ enable_scriptsd_dependency() {
             fi
             FF_CFLAGS="${FF_CFLAGS} -I${gmp_prefix}/include"
             FF_LIBS="${FF_LIBS} -L${gmp_prefix}/lib -lgmp"
+        elif [[ "$fallback_mode" == "xvid" ]]; then
+            if [[ -z "$xvid_prefix" || ! -f "$xvid_prefix/include/xvid.h" ]]; then
+                echo "$stage not found via pkg-config module '$pkg_module' and xvid fallback failed"
+                exit 1
+            fi
+            FF_CFLAGS="${FF_CFLAGS} -I${xvid_prefix}/include"
+            FF_LIBS="${FF_LIBS} -L${xvid_prefix}/lib -lxvidcore"
         else
             echo "$stage not found via pkg-config module '$pkg_module'"
             echo "Install it with Homebrew and ensure pkg-config can resolve it."
@@ -322,6 +332,13 @@ enable_scriptsd_dependency() {
         fi
         FF_CFLAGS="${FF_CFLAGS} -I${gmp_prefix}/include"
         FF_LIBS="${FF_LIBS} -L${gmp_prefix}/lib -lgmp"
+    elif [[ "$fallback_mode" == "xvid" ]]; then
+        if [[ -z "$xvid_prefix" || ! -f "$xvid_prefix/include/xvid.h" ]]; then
+            echo "$stage fallback could not locate xvid headers"
+            exit 1
+        fi
+        FF_CFLAGS="${FF_CFLAGS} -I${xvid_prefix}/include"
+        FF_LIBS="${FF_LIBS} -L${xvid_prefix}/lib -lxvidcore"
     fi
 
     local dep_conf dep_cflags dep_cxxflags dep_ldflags dep_ldexeflags dep_libs

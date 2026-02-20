@@ -19,6 +19,15 @@ FF_ENABLE_LIBSSH|libssh|libssh|
 FF_ENABLE_LIBZMQ|libzmq|libzmq|
 FF_ENABLE_LIBSNAPPY|snappy|snappy|snappy
 FF_ENABLE_LIBOPENMPT|openmpt|libopenmpt|
+FF_ENABLE_LIBSAMPLERATE|libsamplerate|samplerate|
+FF_ENABLE_LIBKVAZAAR|kvazaar|kvazaar|
+FF_ENABLE_SDL2|sdl|sdl2|
+FF_ENABLE_LIBGME|gme|libgme|
+FF_ENABLE_LIBARIBCAPTION|libaribcaption|libaribcaption|
+FF_ENABLE_LIBRUBBERBAND|rubberband|rubberband|
+FF_ENABLE_LIBVVENC|vvenc|libvvenc|
+FF_ENABLE_WHISPER|whisper|whisper|
+FF_ENABLE_LIBXVID|xvid|xvid|xvid
 FF_ENABLE_LIBDAV1D|dav1d|dav1d|
 FF_ENABLE_LIBTHEORA|libtheora|theoraenc|theora
 FF_ENABLE_LIBTWOLAME|twolame|twolame|twolame
